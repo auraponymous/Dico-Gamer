@@ -1,4 +1,4 @@
-# LE DICO GAMER
+# Le Dico Gamer
 
 > Un dictionnaire francophone consacré à la culture vidéoludique, au game design, aux mécaniques de jeu, aux genres, aux technologies, à l’histoire et à l’industrie du jeu vidéo.
 
