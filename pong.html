@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>??? — Le Dico Gamer</title>
+<style>
+  :root {
+    --c-bg: #e1e1e5;
+    --c-text: #1a1a1a;
+    --c-muted: #55555a;
+    --c-red: #d1352c;
+    --c-green: #2f7d3c;
+    --c-blue: #1c5fa8;
+    font-family: 'Courier New', 'Consolas', monospace;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--c-bg);
+    color: var(--c-text);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 1.5rem;
+  }
+
+  .wrap {
+    text-align: center;
+  }
+
+  h1 {
+    font-size: 1rem;
+    font-weight: 700;
+    letter-spacing: 2px;
+    margin-bottom: 0.3rem;
+  }
+
+  h1 .r { color: var(--c-red); }
+  h1 .g { color: var(--c-green); }
+  h1 .b { color: var(--c-blue); }
+
+  p.sub {
+    font-size: 0.7rem;
+    color: var(--c-muted);
+    margin-bottom: 1.2rem;
+    letter-spacing: 0.5px;
+  }
+
+  canvas {
+    background: #0d0d0d;
+    border: 2px solid var(--c-text);
+    border-radius: 4px;
+    display: block;
+    image-rendering: pixelated;
+  }
+
+  .hint {
+    margin-top: 1rem;
+    font-size: 0.68rem;
+    color: var(--c-muted);
+    line-height: 1.6;
+  }
+
+  .hint b { color: var(--c-text); }
+
+  .back {
+    display: inline-block;
+    margin-top: 1.4rem;
+    font-size: 0.68rem;
+    color: var(--c-muted);
+    text-decoration: none;
+    border-bottom: 1px dashed var(--c-muted);
+  }
+
+  .back:hover { color: var(--c-blue); border-color: var(--c-blue); }
+
+  @media (max-width: 520px) {
+    canvas { width: 100%; height: auto; }
+  }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <h1><span class="r">●</span> <span class="g">●</span> <span class="b">●</span> &nbsp; PONG &nbsp; <span class="b">●</span> <span class="g">●</span> <span class="r">●</span></h1>
+  <p class="sub">un classique caché dans le dico</p>
+
+  <canvas id="game" width="480" height="320"></canvas>
+
+  <div class="hint">
+    <b>↑ / ↓</b> pour déplacer ta raquette &nbsp;·&nbsp; <b>ESPACE</b> pour lancer / relancer la balle
+  </div>
+
+  <a class="back" href="index.html">← retour au Dico Gamer</a>
+</div>
+
+<script>
+const canvas = document.getElementById('game');
+const ctx = canvas.getContext('2d');
+const W = canvas.width, H = canvas.height;
+
+const PADDLE_W = 8, PADDLE_H = 56;
+const BALL_SIZE = 8;
+
+const player = { x: 16, y: H/2 - PADDLE_H/2, w: PADDLE_W, h: PADDLE_H, speed: 6, color: '#2f7d3c' };
+const ai     = { x: W - 16 - PADDLE_W, y: H/2 - PADDLE_H/2, w: PADDLE_W, h: PADDLE_H, speed: 4.2, color: '#d1352c' };
+
+const ball = { x: W/2, y: H/2, size: BALL_SIZE, vx: 0, vy: 0, speed: 5, color: '#1c5fa8', moving: false };
+
+let scoreP = 0, scoreA = 0;
+let keys = { up: false, down: false };
+
+function resetBall(direction) {
+  ball.x = W/2;
+  ball.y = H/2;
+  ball.moving = false;
+  ball.vx = 0;
+  ball.vy = 0;
+  ball._dir = direction || (Math.random() > 0.5 ? 1 : -1);
+}
+
+function launchBall() {
+  if (ball.moving) return;
+  const angle = (Math.random() * 0.6 - 0.3); // legere variation d'angle
+  ball.vx = ball._dir * ball.speed;
+  ball.vy = ball.speed * angle * 2;
+  ball.moving = true;
+}
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'ArrowUp')   { keys.up = true; e.preventDefault(); }
+  if (e.key === 'ArrowDown') { keys.down = true; e.preventDefault(); }
+  if (e.code === 'Space') {
+    e.preventDefault();
+    launchBall();
+  }
+});
+
+document.addEventListener('keyup', e => {
+  if (e.key === 'ArrowUp')   keys.up = false;
+  if (e.key === 'ArrowDown') keys.down = false;
+});
+
+function update() {
+  // Raquette joueur
+  if (keys.up)   player.y -= player.speed;
+  if (keys.down) player.y += player.speed;
+  player.y = Math.max(0, Math.min(H - player.h, player.y));
+
+  // IA : suit la balle avec un leger retard / imperfection
+  const aiCenter = ai.y + ai.h / 2;
+  const targetY = ball.y + (Math.random() - 0.5) * 12;
+  if (aiCenter < targetY - 8) ai.y += ai.speed;
+  else if (aiCenter > targetY + 8) ai.y -= ai.speed;
+  ai.y = Math.max(0, Math.min(H - ai.h, ai.y));
+
+  if (!ball.moving) return;
+
+  ball.x += ball.vx;
+  ball.y += ball.vy;
+
+  // Rebond haut/bas
+  if (ball.y <= 0 || ball.y >= H - ball.size) {
+    ball.vy *= -1;
+    ball.y = Math.max(0, Math.min(H - ball.size, ball.y));
+  }
+
+  // Collision raquette joueur
+  if (ball.x <= player.x + player.w &&
+      ball.x >= player.x &&
+      ball.y + ball.size >= player.y &&
+      ball.y <= player.y + player.h) {
+    ball.x = player.x + player.w;
+    ball.vx *= -1.05;
+    const hitPos = (ball.y - player.y) / player.h - 0.5;
+    ball.vy += hitPos * 4;
+  }
+
+  // Collision raquette IA
+  if (ball.x + ball.size >= ai.x &&
+      ball.x <= ai.x + ai.w &&
+      ball.y + ball.size >= ai.y &&
+      ball.y <= ai.y + ai.h) {
+    ball.x = ai.x - ball.size;
+    ball.vx *= -1.05;
+    const hitPos = (ball.y - ai.y) / ai.h - 0.5;
+    ball.vy += hitPos * 4;
+  }
+
+  // Point marque
+  if (ball.x < -ball.size) {
+    scoreA++;
+    resetBall(1);
+  } else if (ball.x > W + ball.size) {
+    scoreP++;
+    resetBall(-1);
+  }
+}
+
+function drawNet() {
+  ctx.strokeStyle = '#444';
+  ctx.setLineDash([6, 8]);
+  ctx.beginPath();
+  ctx.moveTo(W/2, 0);
+  ctx.lineTo(W/2, H);
+  ctx.stroke();
+  ctx.setLineDash([]);
+}
+
+function draw() {
+  ctx.clearRect(0, 0, W, H);
+
+  drawNet();
+
+  // Scores
+  ctx.font = 'bold 22px Courier New';
+  ctx.textAlign = 'center';
+  ctx.fillStyle = player.color;
+  ctx.fillText(scoreP, W/2 - 40, 34);
+  ctx.fillStyle = ai.color;
+  ctx.fillText(scoreA, W/2 + 40, 34);
+
+  // Raquettes
+  ctx.fillStyle = player.color;
+  ctx.fillRect(player.x, player.y, player.w, player.h);
+  ctx.fillStyle = ai.color;
+  ctx.fillRect(ai.x, ai.y, ai.w, ai.h);
+
+  // Balle
+  ctx.fillStyle = ball.moving ? ball.color : '#888';
+  ctx.fillRect(ball.x, ball.y, ball.size, ball.size);
+
+  if (!ball.moving) {
+    ctx.fillStyle = '#bbb';
+    ctx.font = '11px Courier New';
+    ctx.fillText('APPUIE SUR ESPACE', W/2, H/2 + 30);
+  }
+}
+
+function loop() {
+  update();
+  draw();
+  requestAnimationFrame(loop);
+}
+
+resetBall();
+loop();
+</script>
+</body>
+</html>

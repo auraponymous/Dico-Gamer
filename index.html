@@ -760,6 +760,9 @@ function showSuggestions(q) {
 }
 
 function doSearch() {
+  const raw = document.getElementById('searchInput').value;
+  if (raw.trim() === 'PONG') { window.location.href = 'pong.html'; return; }
+
   const sugg = document.getElementById('suggestions');
   if (sugg._matches && sugg._matches.length) {
     document.getElementById('searchInput').value = sugg._matches[0].terme;
