@@ -1,0 +1,868 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Le Dico Gamer</title>
+<style>
+  :root {
+    --c-bg: #8c8c86;
+    --c-surface: #dcdad2;
+    --c-surface-2: #cac8c0;
+    --c-border: #2a2a28;
+    --c-border-hover: #000000;
+    --c-text: #1a1a18;
+    --c-muted: #55534c;
+    --c-red: #d1352c;
+    --c-green: #2f7d3c;
+    --c-blue: #1c5fa8;
+    font-family: 'Courier New', 'Consolas', monospace;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--c-bg);
+    color: var(--c-text);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  header {
+    background: var(--c-bg);
+    color: var(--c-text);
+    padding: 2rem 1.5rem 1.25rem;
+    border-bottom: 2px solid var(--c-border);
+  }
+
+  header h1 {
+    font-size: 1.4rem;
+    font-weight: 700;
+    letter-spacing: 1px;
+  }
+
+  header p {
+    font-size: 0.78rem;
+    color: var(--c-muted);
+    margin-top: 4px;
+    font-style: italic;
+  }
+
+  .container {
+    width: 100%;
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 1.5rem 1rem;
+    flex: 1;
+    box-sizing: border-box;
+  }
+
+  html, body { width: 100%; overflow-x: hidden; }
+
+  /* Toolbar */
+  .toolbar {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 1rem;
+    align-items: center;
+  }
+
+  .search-wrap {
+    flex: 1;
+    position: relative;
+  }
+
+  .search-wrap svg {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--c-muted);
+    pointer-events: none;
+  }
+
+  #searchInput {
+    width: 100%;
+    padding: 0.65rem 1rem 0.65rem 2.5rem;
+    border: 1px solid var(--c-border);
+    border-radius: 4px;
+    font-size: 0.85rem;
+    font-family: inherit;
+    background: var(--c-surface);
+    color: var(--c-text);
+    font-weight: 700;
+    transition: border-color 0.15s, box-shadow 0.15s;
+    outline: none;
+  }
+
+  #searchInput::placeholder { color: var(--c-muted); font-weight: 400; }
+  #searchInput:focus { border-color: var(--c-blue); box-shadow: 0 0 0 2px #1c5fa833; }
+
+  /* Dropdown suggestions */
+  #suggestions {
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0;
+    right: 0;
+    background: var(--c-surface);
+    border: 1px solid var(--c-border);
+    border-radius: 4px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.35);
+    z-index: 100;
+    max-height: 280px;
+    overflow-y: auto;
+    display: none;
+  }
+
+  #suggestions.open { display: block; }
+
+  .suggestion-item {
+    padding: 0.6rem 1rem;
+    font-size: 0.82rem;
+    cursor: pointer;
+    color: var(--c-text);
+    border-bottom: 1px solid var(--c-surface-2);
+    transition: background 0.1s;
+  }
+
+  .suggestion-item:last-child { border-bottom: none; }
+  .suggestion-item:hover,
+  .suggestion-item.highlighted { background: #1c5fa822; color: var(--c-blue); font-weight: 700; }
+
+  /* Search button */
+  #searchBtn {
+    padding: 0.65rem 1.2rem;
+    background: var(--c-text);
+    color: var(--c-surface);
+    border: 1px solid var(--c-border);
+    border-radius: 4px;
+    font-size: 0.78rem;
+    font-family: inherit;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.15s;
+  }
+
+  #searchBtn:hover { background: var(--c-blue); border-color: var(--c-blue); }
+
+  /* Alpha nav */
+  .alpha-nav {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 2px;
+    margin-bottom: 0.7rem;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .alpha-btn {
+    width: 22px;
+    height: 22px;
+    padding: 0;
+    border-radius: 2px;
+    border: none;
+    background: var(--c-surface);
+    font-size: 0.68rem;
+    font-family: inherit;
+    font-weight: 700;
+    cursor: pointer;
+    color: var(--c-text);
+    transition: all 0.12s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  .alpha-btn:hover { background: var(--c-blue); color: #fff; }
+  .alpha-btn.active { background: var(--c-red); color: #fff; }
+  .alpha-btn.empty { opacity: 0.3; cursor: default; pointer-events: none; color: var(--c-muted); }
+
+  /* Category nav */
+  .category-nav {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    justify-content: center;
+    margin-bottom: 1rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--c-surface-2);
+  }
+
+  .category-btn {
+    padding: 4px 11px;
+    border-radius: 20px;
+    font-size: 0.66rem;
+    font-family: inherit;
+    font-weight: 700;
+    letter-spacing: 0.2px;
+    cursor: pointer;
+    background: transparent;
+    border: 1px solid;
+    transition: all 0.12s;
+  }
+
+  .category-btn[data-c="red"]   { color: var(--c-red);   border-color: var(--c-red); }
+  .category-btn[data-c="green"] { color: var(--c-green); border-color: var(--c-green); }
+  .category-btn[data-c="blue"]  { color: var(--c-blue);  border-color: var(--c-blue); }
+
+  .category-btn[data-c="red"]:hover   { background: var(--c-red);   color: #fff; }
+  .category-btn[data-c="green"]:hover { background: var(--c-green); color: #fff; }
+  .category-btn[data-c="blue"]:hover  { background: var(--c-blue);  color: #fff; }
+
+  .category-btn.active[data-c="red"]   { background: var(--c-red);   color: #fff; }
+  .category-btn.active[data-c="green"] { background: var(--c-green); color: #fff; }
+  .category-btn.active[data-c="blue"]  { background: var(--c-blue);  color: #fff; }
+
+  /* Random button */
+  #randomBtn {
+    width: 100%;
+    padding: 0.6rem 1rem;
+    background: transparent;
+    color: var(--c-text);
+    border: 1px solid var(--c-border);
+    border-radius: 4px;
+    font-size: 0.78rem;
+    font-family: inherit;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    cursor: pointer;
+    transition: all 0.15s;
+    margin-bottom: 1.5rem;
+  }
+
+  #randomBtn:hover { background: var(--c-text); color: var(--c-surface); }
+
+  /* Category badge (used in nav + entry cards) */
+  .cat-badge {
+    display: inline-block;
+    padding: 2px 9px;
+    border-radius: 20px;
+    font-size: 0.62rem;
+    font-weight: 700;
+    letter-spacing: 0.2px;
+    cursor: pointer;
+    border: 1px solid;
+    white-space: nowrap;
+  }
+
+  .cat-badge[data-c="red"]   { color: #fff; background: var(--c-red);   border-color: var(--c-red); }
+  .cat-badge[data-c="green"] { color: #fff; background: var(--c-green); border-color: var(--c-green); }
+  .cat-badge[data-c="blue"]  { color: #fff; background: var(--c-blue);  border-color: var(--c-blue); }
+  .cat-badge:hover { filter: brightness(1.15); }
+
+  /* Liste des mots (vue par lettre / categorie) */
+  .word-list-item {
+    background: var(--c-surface);
+    border: 1px solid var(--c-surface-2);
+    border-left: 3px solid var(--c-muted);
+    border-radius: 4px;
+    padding: 0.85rem 1.1rem;
+    margin-bottom: 0.6rem;
+    cursor: pointer;
+    transition: border-color 0.15s;
+  }
+
+  .word-list-item:hover { border-left-color: var(--c-blue); }
+  .word-list-item.expanded { border-left-color: var(--c-red); }
+
+  .word-list-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+  }
+
+  .word-list-term {
+    font-size: 0.92rem;
+    font-weight: 700;
+    color: var(--c-text);
+    letter-spacing: 0.3px;
+  }
+
+  .word-list-variante {
+    font-size: 0.74rem;
+    font-style: italic;
+    color: var(--c-muted);
+    margin-top: 0.15rem;
+  }
+
+  .word-list-def {
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: var(--c-text);
+    margin-top: 0.4rem;
+    line-height: 1.55;
+  }
+
+  .word-list-body {
+    display: none;
+    margin-top: 0.85rem;
+    padding-top: 0.85rem;
+    border-top: 1px solid var(--c-surface-2);
+  }
+
+  .word-list-item.expanded .word-list-body { display: block; }
+
+  /* Entry card (recherche directe) */
+  .entry {
+    background: var(--c-surface);
+    border: 1px solid var(--c-surface-2);
+    border-left: 3px solid var(--c-red);
+    border-radius: 4px;
+    padding: 1.1rem 1.25rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .entry-top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 10px;
+  }
+
+  .entry-term {
+    font-size: 0.98rem;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+    color: var(--c-text);
+  }
+
+  .entry-variante {
+    font-size: 0.74rem;
+    font-weight: 400;
+    color: var(--c-muted);
+    font-style: italic;
+    margin-top: 0.15rem;
+  }
+
+  .entry-def-short {
+    font-size: 0.8rem;
+    color: var(--c-text);
+    font-weight: 700;
+    margin-top: 0.4rem;
+    line-height: 1.55;
+  }
+
+  .entry-body {
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--c-surface-2);
+  }
+
+  .field-label {
+    font-size: 0.65rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--c-muted);
+    margin-bottom: 0.3rem;
+    margin-top: 0.9rem;
+  }
+
+  .field-label:first-child { margin-top: 0; }
+
+  .field-content {
+    font-size: 0.82rem;
+    line-height: 1.6;
+    color: var(--c-text);
+    margin-bottom: 0.5rem;
+  }
+
+  .field-content.explication { font-style: italic; }
+
+  .field-content.exemple {
+    background: var(--c-surface-2);
+    border-left: 3px solid var(--c-green);
+    padding: 0.6rem 0.8rem;
+    border-radius: 0 4px 4px 0;
+    font-style: italic;
+  }
+
+  .tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 0.3rem;
+  }
+
+  .tag {
+    background: transparent;
+    color: var(--c-blue);
+    border: 1px solid var(--c-blue);
+    border-radius: 20px;
+    font-size: 0.72rem;
+    font-family: inherit;
+    font-weight: 700;
+    padding: 3px 10px;
+    cursor: pointer;
+    transition: all 0.12s;
+  }
+
+  .tag:hover { background: var(--c-blue); color: #fff; }
+
+  .state-msg {
+    text-align: center;
+    padding: 3rem 1rem;
+    color: var(--c-muted);
+    font-size: 0.82rem;
+  }
+
+  footer {
+    background: var(--c-bg);
+    border-top: 2px solid var(--c-border);
+    color: var(--c-muted);
+    text-align: center;
+    padding: 1rem;
+    font-size: 0.72rem;
+  }
+
+  @media (max-width: 600px) {
+    header { padding: 1.25rem 1rem 1rem; }
+    header h1 { font-size: 1.15rem; }
+    .container { padding: 1rem 0.75rem; }
+
+    .toolbar { gap: 8px; }
+    #searchInput { font-size: 16px; padding: 0.6rem 0.9rem 0.6rem 2.3rem; }
+    #searchBtn { padding: 0.6rem 0.9rem; font-size: 0.72rem; }
+
+    .alpha-nav { gap: 1px; }
+    .alpha-btn { width: 16px; height: 20px; font-size: 0.58rem; }
+
+    .category-nav { gap: 4px; }
+    .category-btn { font-size: 0.6rem; padding: 3px 8px; }
+
+    #randomBtn { font-size: 0.72rem; padding: 0.55rem 1rem; }
+
+    .entry, .word-list-item { padding: 0.85rem 1rem; }
+    .entry-term, .word-list-term { font-size: 0.88rem; }
+    .entry-def-short, .word-list-def { font-size: 0.78rem; }
+    .field-content { font-size: 0.8rem; }
+
+    #suggestions { max-height: 220px; }
+  }
+
+  @media (max-width: 380px) {
+    .alpha-nav { gap: 0; }
+    .alpha-btn { width: 13px; font-size: 0.5rem; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="container" style="padding-top:0;padding-bottom:0;">
+    <h1><a href="#" id="homeLink" style="color:inherit;text-decoration:none;cursor:pointer;">Le Dico Gamer</a></h1>
+    <p id="lastUpdate">Chargement…</p>
+  </div>
+</header>
+
+<div class="container">
+
+  <div class="toolbar">
+    <div class="search-wrap">
+      <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+      <input type="text" id="searchInput" placeholder="rechercher un terme..." autocomplete="off" />
+      <div id="suggestions"></div>
+    </div>
+    <button id="searchBtn">RECHERCHE</button>
+  </div>
+
+  <div class="alpha-nav" id="alphNav">
+    <button class="alpha-btn" data-l="A">A</button>
+    <button class="alpha-btn" data-l="B">B</button>
+    <button class="alpha-btn" data-l="C">C</button>
+    <button class="alpha-btn" data-l="D">D</button>
+    <button class="alpha-btn" data-l="E">E</button>
+    <button class="alpha-btn" data-l="F">F</button>
+    <button class="alpha-btn" data-l="G">G</button>
+    <button class="alpha-btn" data-l="H">H</button>
+    <button class="alpha-btn" data-l="I">I</button>
+    <button class="alpha-btn" data-l="J">J</button>
+    <button class="alpha-btn" data-l="K">K</button>
+    <button class="alpha-btn" data-l="L">L</button>
+    <button class="alpha-btn" data-l="M">M</button>
+    <button class="alpha-btn" data-l="N">N</button>
+    <button class="alpha-btn" data-l="O">O</button>
+    <button class="alpha-btn" data-l="P">P</button>
+    <button class="alpha-btn" data-l="Q">Q</button>
+    <button class="alpha-btn" data-l="R">R</button>
+    <button class="alpha-btn" data-l="S">S</button>
+    <button class="alpha-btn" data-l="T">T</button>
+    <button class="alpha-btn" data-l="U">U</button>
+    <button class="alpha-btn" data-l="V">V</button>
+    <button class="alpha-btn" data-l="W">W</button>
+    <button class="alpha-btn" data-l="X">X</button>
+    <button class="alpha-btn" data-l="Y">Y</button>
+    <button class="alpha-btn" data-l="Z">Z</button>
+  </div>
+
+  <div class="category-nav" id="categoryNav"></div>
+
+  <button id="randomBtn">UN MOT ALÉATOIRE</button>
+
+  <div id="entries"></div>
+
+</div>
+
+<footer>© Auraponymous — 2026</footer>
+
+<script>
+// ─── CONFIG ───────────────────────────────────────────────────────────────
+const SHEET_ID   = '1lwJ97tXlqZATGajkSIcl7Z_mRovH3pIIs06JUcuQuvo';
+const SHEET_NAME = 'DicoGamer';
+// Colonnes lues par nom : categorie | terme | traduction | definition | explication | exemple | renvois
+
+const CATEGORIES = [
+  'Accessibilité','Audio','Business','Consoles','Culture','Développement',
+  'Distribution','eSport','Gameplay','Genres','Graphisme','Histoire',
+  'Immersion','Licences','Matériel','Moteurs','Personnalités','Réseaux',
+  'Streaming','Studios'
+];
+const RGB_CYCLE = ['red','green','blue'];
+
+function categoryColor(cat) {
+  const i = CATEGORIES.indexOf(cat);
+  return RGB_CYCLE[(i >= 0 ? i : 0) % 3];
+}
+
+function buildCategoryNav() {
+  const nav = document.getElementById('categoryNav');
+  nav.innerHTML = CATEGORIES.map(cat =>
+    `<button class="category-btn" data-c="${categoryColor(cat)}" data-cat="${cat}">${cat}</button>`
+  ).join('');
+}
+buildCategoryNav();
+
+// ─── DATA ─────────────────────────────────────────────────────────────────
+
+let ALL = [];
+
+function normalize(str) {
+  return (str || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+}
+
+async function loadData() {
+  const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent(SHEET_NAME)}`;
+  try {
+    const res  = await fetch(url);
+    const text = await res.text();
+    const json = JSON.parse(text.match(/google\.visualization\.Query\.setResponse\(([\s\S]*)\)/)?.[1]);
+    const rows = json.table.rows;
+
+    const firstRow = rows[0]?.c?.map(c => (c?.v || '').toLowerCase().trim()) || [];
+    const hasHeader = firstRow.includes('terme');
+    const dataRows  = hasHeader ? rows.slice(1) : rows;
+
+    const idx = {
+      categorie:   firstRow.indexOf('categorie'),
+      terme:       firstRow.indexOf('terme'),
+      traduction:  firstRow.indexOf('traduction'),
+      definition:  firstRow.indexOf('definition'),
+      explication: firstRow.indexOf('explication'),
+      exemple:     firstRow.indexOf('exemple'),
+      renvois:     firstRow.indexOf('renvois'),
+    };
+
+    const col = (r, key) => (idx[key] >= 0 ? r.c[idx[key]]?.v : null) ?? '';
+
+    ALL = dataRows.map(r => ({
+      categorie:   col(r, 'categorie'),
+      terme:       col(r, 'terme'),
+      traduction:  col(r, 'traduction'),
+      definition:  col(r, 'definition'),
+      explication: col(r, 'explication'),
+      exemple:     col(r, 'exemple'),
+      renvois:     col(r, 'renvois'),
+    })).filter(r => r.terme);
+
+    const count = ALL.length;
+    document.getElementById('lastUpdate').textContent =
+      `${count} termes · amendés régulièrement`;
+
+    markEmptyLetters();
+
+    if (ALL.length) {
+      const pick = ALL[Math.floor(Math.random() * ALL.length)];
+      showEntry(pick);
+    }
+  } catch(e) {
+    console.error(e);
+    document.getElementById('entries').innerHTML = `<div class="state-msg">Erreur de chargement des données.</div>`;
+  }
+}
+
+function markEmptyLetters() {
+  const present = new Set(ALL.map(e => normalize(e.terme || '')[0]?.toUpperCase()));
+  document.querySelectorAll('.alpha-btn').forEach(btn => {
+    btn.classList.toggle('empty', !present.has(btn.dataset.l));
+  });
+}
+
+function catBadgeHtml(cat) {
+  if (!cat) return '';
+  return `<span class="cat-badge" data-c="${categoryColor(cat)}" data-cat="${cat}">${cat}</span>`;
+}
+
+function buildBodyHtml(entry) {
+  const explication = entry.explication || '';
+  const exemple     = entry.exemple || '';
+  const renvois     = entry.renvois || '';
+  const renvoisArr  = renvois
+    ? String(renvois).split(/[,;]+/).map(s => s.trim()).filter(Boolean)
+    : [];
+  const tagsHtml = renvoisArr
+    .map(r => `<span class="tag" data-search="${r}">${r}</span>`)
+    .join('');
+
+  return `
+    ${explication ? `<div class="field-content explication">${explication}</div>` : ''}
+    ${exemple
+      ? `<div class="field-label">Exemple</div><div class="field-content exemple">${exemple}</div>`
+      : ''}
+    ${renvoisArr.length
+      ? `<div class="field-label">Voir aussi</div><div class="tags">${tagsHtml}</div>`
+      : ''}
+  `;
+}
+
+function buildHeaderHtml(entry, topClass, termClass, variClass, defClass) {
+  const terme      = entry.terme || '';
+  const traduction = entry.traduction || '';
+  const def        = entry.definition || '';
+  return `
+    <div class="${topClass}">
+      <div>
+        <div class="${termClass}">${terme}</div>
+        ${traduction ? `<div class="${variClass}">${traduction}</div>` : ''}
+      </div>
+      ${catBadgeHtml(entry.categorie)}
+    </div>
+    ${def ? `<div class="${defClass}">${def}</div>` : ''}
+  `;
+}
+
+function showEntry(entry) {
+  document.getElementById('suggestions').classList.remove('open');
+  document.getElementById('entries').innerHTML = `
+    <div class="entry">
+      ${buildHeaderHtml(entry, 'entry-top', 'entry-term', 'entry-variante', 'entry-def-short')}
+      <div class="entry-body">${buildBodyHtml(entry)}</div>
+    </div>`;
+}
+
+function clearAllActiveFilters() {
+  document.querySelectorAll('.alpha-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.category-btn').forEach(b => b.classList.remove('active'));
+}
+
+function showLetterList(letter) {
+  document.getElementById('searchInput').value = '';
+  document.getElementById('suggestions').classList.remove('open');
+
+  clearAllActiveFilters();
+  document.querySelectorAll('.alpha-btn').forEach(b =>
+    b.classList.toggle('active', b.dataset.l === letter)
+  );
+
+  const matches = ALL
+    .filter(e => normalize(e.terme || '')[0]?.toUpperCase() === letter)
+    .sort((a, b) => normalize(a.terme).localeCompare(normalize(b.terme)));
+
+  renderList(matches, `Aucun terme pour la lettre ${letter}.`);
+}
+
+function showCategoryList(cat) {
+  document.getElementById('searchInput').value = '';
+  document.getElementById('suggestions').classList.remove('open');
+
+  clearAllActiveFilters();
+  document.querySelectorAll('.category-btn').forEach(b =>
+    b.classList.toggle('active', b.dataset.cat === cat)
+  );
+
+  const matches = ALL
+    .filter(e => e.categorie === cat)
+    .sort((a, b) => normalize(a.terme).localeCompare(normalize(b.terme)));
+
+  renderList(matches, `Aucun terme pour la catégorie ${cat}.`);
+}
+
+function renderList(matches, emptyMsg) {
+  if (!matches.length) {
+    document.getElementById('entries').innerHTML = `<div class="state-msg">${emptyMsg}</div>`;
+    return;
+  }
+
+  const html = matches.map((e, i) => `
+    <div class="word-list-item" data-idx="${i}">
+      ${buildHeaderHtml(e, 'word-list-top', 'word-list-term', 'word-list-variante', 'word-list-def')}
+      <div class="word-list-body">${buildBodyHtml(e)}</div>
+    </div>
+  `).join('');
+
+  document.getElementById('entries').innerHTML = html;
+  document.getElementById('entries')._matches = matches;
+}
+
+function showHome() {
+  document.getElementById('searchInput').value = '';
+  document.getElementById('suggestions').classList.remove('open');
+  clearAllActiveFilters();
+  if (ALL.length) {
+    const pick = ALL[Math.floor(Math.random() * ALL.length)];
+    showEntry(pick);
+  } else {
+    document.getElementById('entries').innerHTML = '';
+  }
+}
+
+function showSuggestions(q) {
+  const sugg = document.getElementById('suggestions');
+  if (!q) { sugg.classList.remove('open'); return; }
+
+  const q_norm = normalize(q);
+  const matches = ALL.filter(e =>
+    normalize(e.terme).includes(q_norm) ||
+    normalize(e.traduction || '').includes(q_norm)
+  ).slice(0, 8);
+
+  if (!matches.length) { sugg.classList.remove('open'); return; }
+
+  sugg.innerHTML = matches.map((e, i) => {
+    const viaAutre = !normalize(e.terme).includes(q_norm);
+    const extra = viaAutre ? e.traduction : '';
+    return `<div class="suggestion-item" data-idx="${i}">
+      ${e.terme}${extra ? `<span style="color:var(--c-muted);font-size:0.78rem;margin-left:6px;font-style:italic;">${extra}</span>` : ''}
+    </div>`;
+  }).join('');
+  sugg._matches = matches;
+  sugg.classList.add('open');
+}
+
+function doSearch() {
+  const sugg = document.getElementById('suggestions');
+  if (sugg._matches && sugg._matches.length) {
+    document.getElementById('searchInput').value = sugg._matches[0].terme;
+    showEntry(sugg._matches[0]);
+  }
+  sugg.classList.remove('open');
+  clearAllActiveFilters();
+}
+
+document.getElementById('searchInput').addEventListener('input', e => {
+  showSuggestions(e.target.value);
+});
+
+document.getElementById('searchInput').addEventListener('keydown', e => {
+  const sugg  = document.getElementById('suggestions');
+  const items = sugg.querySelectorAll('.suggestion-item');
+  let highlighted = sugg.querySelector('.suggestion-item.highlighted');
+  let idx = Array.from(items).indexOf(highlighted);
+
+  if (e.key === 'ArrowDown') {
+    e.preventDefault();
+    if (highlighted) highlighted.classList.remove('highlighted');
+    idx = (idx + 1) % items.length;
+    items[idx].classList.add('highlighted');
+    items[idx].scrollIntoView({ block: 'nearest' });
+
+  } else if (e.key === 'ArrowUp') {
+    e.preventDefault();
+    if (highlighted) highlighted.classList.remove('highlighted');
+    idx = (idx - 1 + items.length) % items.length;
+    items[idx].classList.add('highlighted');
+    items[idx].scrollIntoView({ block: 'nearest' });
+
+  } else if (e.key === 'Enter') {
+    if (highlighted && sugg._matches) {
+      const entry = sugg._matches[Array.from(items).indexOf(highlighted)];
+      document.getElementById('searchInput').value = entry.terme;
+      showEntry(entry);
+      sugg.classList.remove('open');
+      clearAllActiveFilters();
+    } else {
+      doSearch();
+    }
+  } else if (e.key === 'Escape') {
+    sugg.classList.remove('open');
+  }
+});
+
+document.getElementById('suggestions').addEventListener('click', e => {
+  const item = e.target.closest('.suggestion-item');
+  if (!item) return;
+  const sugg  = document.getElementById('suggestions');
+  const entry = sugg._matches[parseInt(item.dataset.idx)];
+  document.getElementById('searchInput').value = entry.terme;
+  showEntry(entry);
+  clearAllActiveFilters();
+});
+
+document.getElementById('searchBtn').addEventListener('click', doSearch);
+
+document.addEventListener('click', e => {
+  if (!e.target.closest('.search-wrap')) {
+    document.getElementById('suggestions').classList.remove('open');
+  }
+});
+
+document.getElementById('alphNav').addEventListener('click', e => {
+  const btn = e.target.closest('.alpha-btn');
+  if (!btn || btn.classList.contains('empty')) return;
+  showLetterList(btn.dataset.l);
+});
+
+document.getElementById('categoryNav').addEventListener('click', e => {
+  const btn = e.target.closest('.category-btn');
+  if (!btn) return;
+  showCategoryList(btn.dataset.cat);
+});
+
+document.getElementById('randomBtn').addEventListener('click', () => {
+  if (!ALL.length) return;
+  const pick = ALL[Math.floor(Math.random() * ALL.length)];
+  document.getElementById('searchInput').value = pick.terme;
+  clearAllActiveFilters();
+  showEntry(pick);
+});
+
+document.getElementById('homeLink').addEventListener('click', e => {
+  e.preventDefault();
+  showHome();
+});
+
+document.getElementById('entries').addEventListener('click', e => {
+  const tag = e.target.closest('.tag');
+  if (tag) {
+    e.stopPropagation();
+    const s     = tag.dataset.search;
+    const match = ALL.find(en => normalize(en.terme) === normalize(s));
+    document.getElementById('searchInput').value = s;
+    clearAllActiveFilters();
+    if (match) showEntry(match);
+    else showSuggestions(s);
+    return;
+  }
+
+  const badge = e.target.closest('.cat-badge');
+  if (badge) {
+    e.stopPropagation();
+    showCategoryList(badge.dataset.cat);
+    return;
+  }
+
+  const item = e.target.closest('.word-list-item');
+  if (item) {
+    item.classList.toggle('expanded');
+  }
+});
+
+document.getElementById('entries').innerHTML = `<div class="state-msg">Chargement…</div>`;
+loadData();
+</script>
+</body>
+</html>
