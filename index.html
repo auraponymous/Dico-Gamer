@@ -545,26 +545,42 @@ function normalize(str) {
   return (str || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
 }
 
+function normalizeHeader(str) {
+  return (str || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+}
+
 async function loadData() {
-  const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent(SHEET_NAME)}`;
+  // headers=1 force Google a traiter la 1re ligne comme en-tete (evite la detection auto, peu fiable)
+  const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent(SHEET_NAME)}&headers=1`;
   try {
     const res  = await fetch(url);
     const text = await res.text();
     const json = JSON.parse(text.match(/google\.visualization\.Query\.setResponse\(([\s\S]*)\)/)?.[1]);
     const rows = json.table.rows;
+    const cols = json.table.cols || [];
 
-    const firstRow = rows[0]?.c?.map(c => (c?.v || '').toLowerCase().trim()) || [];
-    const hasHeader = firstRow.includes('terme');
-    const dataRows  = hasHeader ? rows.slice(1) : rows;
+    // En-tetes lus depuis cols[].label (fiable avec headers=1) plutot que depuis rows[0]
+    let headerLabels = cols.map(c => normalizeHeader(c.label));
+    let dataRows = rows;
+
+    // Filet de securite : si cols[].label ne contient pas 'terme', on retente
+    // en lisant l'entete depuis la 1re ligne de donnees (ancienne methode)
+    if (!headerLabels.includes('terme') && rows.length) {
+      const firstRowLabels = rows[0]?.c?.map(c => normalizeHeader(c?.v)) || [];
+      if (firstRowLabels.includes('terme')) {
+        headerLabels = firstRowLabels;
+        dataRows = rows.slice(1);
+      }
+    }
 
     const idx = {
-      categorie:   firstRow.indexOf('categorie'),
-      terme:       firstRow.indexOf('terme'),
-      traduction:  firstRow.indexOf('traduction'),
-      definition:  firstRow.indexOf('definition'),
-      explication: firstRow.indexOf('explication'),
-      exemple:     firstRow.indexOf('exemple'),
-      renvois:     firstRow.indexOf('renvois'),
+      categorie:   headerLabels.indexOf('categorie'),
+      terme:       headerLabels.indexOf('terme'),
+      traduction:  headerLabels.indexOf('traduction'),
+      definition:  headerLabels.indexOf('definition'),
+      explication: headerLabels.indexOf('explication'),
+      exemple:     headerLabels.indexOf('exemple'),
+      renvois:     headerLabels.indexOf('renvois'),
     };
 
     const col = (r, key) => (idx[key] >= 0 ? r.c[idx[key]]?.v : null) ?? '';
