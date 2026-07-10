@@ -372,10 +372,10 @@
     margin-bottom: 0.5rem;
   }
 
-  .field-content.explication { font-style: italic; }
+  .field-content.explication { font-style: normal; }
 
   .field-content.exemple {
-    background: var(--c-surface-2);
+    background: #eaeaec;
     border-left: 3px solid var(--c-green);
     padding: 0.6rem 0.8rem;
     border-radius: 0 4px 4px 0;
@@ -637,7 +637,7 @@ function buildBodyHtml(entry) {
   return `
     ${explication ? `<div class="field-content explication">${explication}</div>` : ''}
     ${exemple
-      ? `<div class="field-label">Exemple</div><div class="field-content exemple">${exemple}</div>`
+      ? `<div class="field-content exemple">${exemple}</div>`
       : ''}
     ${renvoisArr.length
       ? `<div class="field-label">Voir aussi</div><div class="tags">${tagsHtml}</div>`
