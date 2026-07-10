@@ -26,6 +26,8 @@ Ce dictionnaire propose donc une lecture transversale du jeu vidéo, à la crois
 
 Le dictionnaire rassemble plus d'un millier d'entrées couvrant notamment les mécaniques de gameplay ; les genres vidéoludiques ; les systèmes de progression ; les interfaces utilisateur ; les concepts de game et de level design ; les technologies graphiques ; les moteurs de jeu ; les consoles ; les plateformes de distribution ; les modèles économiques ; les métiers du développement ; les communautés de joueurs ; l'esport ; les studios et éditeurs ; les œuvres majeures ; les grandes licences ; les événements historiques ; ainsi que les principaux termes employés dans l'industrie vidéoludique.
 
+Et comme tout projet un peu Geek, ce Dico Gamer cache un Easter Egg... saurez-vous le trouver ?
+
 ## État du projet
 
 Ce dictionnaire est un enrichissement continu. Les entrées sont progressivement ajoutées, révisées et harmonisées afin de constituer à terme une base de connaissances francophone de référence consacrée au jeu vidéo et à sa culture.
